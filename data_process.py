@@ -99,7 +99,78 @@ def main(args):
             "race_ainaan": "American Indian or Alaskan Native",
             "race_asian": "Asian American/Asian",
             "race_his": "Hispanic/Latin(x)",
-            "race_pi": "Native Hawaiian or Pacific Islander"
+            "race_pi": "Native Hawaiian or Pacific Islander",
+            "race_mides": "Middle Eastern, Arab, or Arab American",
+            "race_white": "White",
+            "race_other": "Other race",
+            "race_other_text": ""
+        }
+
+        # What is your group of race
+        race_group = {
+            "black_african" : "African",
+            "black_africanam": "African American",
+            "black_caribean": "Caribbean/West Indian",
+            "black_afrolatin": "Afro-Latina/o/x",
+            "black_other": "Other",
+            "black_other_text": "",
+            "asian_east": "East Asian",
+            "asian_southeast": "Southeast Asian",
+            "asian_south": "South Asian",
+            "asian_filipin": "Filipina/o/x",
+            "asian_other": "Other",
+            "his_mexican": "Mexican/Mexican American",
+            "his_centralam": "Central American",
+            "his_southam": "South American",
+            "his_carribean": "Caribbean",
+            "his_spainport": "Spain/Portugal",
+            "his_other": "other"
+        }
+
+        # International
+        international = {
+            "international" : "Yes/No",
+        }
+
+        # citizeen
+        Citizenship = {
+            "st_citizen": "US Citizen",
+            "st_permanentres": "Permanent Resident/Green Card Holder",
+            "st_visa": "A visa holder (F-1, J-1, H1-B, A, L, G, E, and TN)",
+            "st_otherdoc": "Other legally documented status (e.g., adjustment of status to permanent Resident) (please specify)",
+            "st_notcomfid": "I dont feel comfortable identifying my citizenship status in the U.S.",
+            "st_undoc": "Undocumented",
+            "st_citizenship_idk": "Temporary Resident/Green Card Holder",
+            "st_refugee": "Refugee",
+            "st_DACA": "Deferred Action for Childhood Arrivals (DACA)",
+            "st_TPS": "Temporary Protected Status (TPS)"
+        }
+
+        # age us
+        age_US = {
+            "value_pair": {
+                1 : "U.S.-born",
+                2 : "Less than 12 years",
+                3 : "12-17 years",
+                4 : "18-35 years",
+                5 : "More than 35 years",
+            }
+        }
+
+        fincur = {
+            "value_pair": {
+                1:"Always stressful",
+                2:"Often stressful",
+                3:"Sometimes stressful",
+                4:"Rarely stressful",
+                5:"Never stressful",
+            }
+        }
+
+        finpast = {
+            "value_pair": {
+                
+            }
         }
 
         prompt_columns = [col for col in df.columns if col not in exclude_columns + ['label']]
