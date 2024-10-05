@@ -9,7 +9,9 @@ def main(args):
 
     print("original data number: ", num_rows)
 
-    exclude_columns = ['dx_dep_1', 'dx_dep_2', 'dx_dep_3', 'dx_dep_4', 'dx_dep_4_text', 'dx_dep_5']
+    depression_columns = ['dx_dep_1', 'dx_dep_2', 'dx_dep_3', 'dx_dep_4', 'dx_dep_4_text', 'dx_dep_5']
+
+    anxious_columns = ['dx_ax_1', 'dx_ax_2', 'dx_ax_3', 'dx_ax_4', 'dx_ax_5', 'dx_ax_6', 'dx_ax_6_text', 'dx_ax_7']
 
     include_columns_hs = {
         'bar_hs_1': "No need for services",
@@ -89,7 +91,7 @@ def main(args):
 
         if args.task == "binary_class_classification":
 
-            df['label'] = df[exclude_columns].notna().any(axis=1).astype(int)
+            df['label'] = df[depression_columns].notna().any(axis=1).astype(int)
 
             # Generate customized prompt
             df['text'] = df.apply(lambda row: (
@@ -97,33 +99,33 @@ def main(args):
                 "In the past 12 months, which of the following factors have caused you to receive fewer services " +
                 "(counseling, therapy, or medications) for your mental or emotional health than you would have otherwise received? " +
                 "(Select all that apply): " + 
-                (", ".join([f"{include_columns_hs[col]}" for col in include_columns_hs if pd.notna(row[col]) and row[col] != '']) or "no idea") +
+                (", ".join([f"{include_columns_hs[col]}" for col in include_columns_hs if pd.notna(row.get(col, '')) and row.get(col, '') != '']) or "no idea") +
                 ". " + '''In the past 12 months, which of the following explain why you have not received medication or therapy 
                 for your mental or emotional health? (Select all that apply): ''' +
-                (", ".join([f"{include_columns_ns[col]}" for col in include_columns_ns if pd.notna(row[col]) and row[col] != '']) or "no idea") +
+                (", ".join([f"{include_columns_ns[col]}" for col in include_columns_ns if pd.notna(row.get(col, '')) and row.get(col, '') != '']) or "no idea") +
                 
                 # Special handling for 'bar_ns_8_text'
-                (f", Additional input provided by the user: {row['bar_ns_8_text']}" if pd.notna(row['bar_ns_8_text']) and row['bar_ns_8_text'] != '' else "") +
+                (f", Additional input provided by the user: {row.get('bar_ns_8_text', '')}" if pd.notna(row.get('bar_ns_8_text', '')) and row.get('bar_ns_8_text', '') != '' else "") +
                 
                 ". " + '''Instructions for this item: “This question asks about ways you may have hurt yourself on purpose, without
                 intending to kill yourself.” In the past year, have you ever done any of the following intentionally? (Select all that apply): ''' +
-                (", ".join([f"{include_columns_sib[col]}" for col in include_columns_sib if pd.notna(row[col]) and row[col] != '']) or "no idea") +
+                (", ".join([f"{include_columns_sib[col]}" for col in include_columns_sib if pd.notna(row.get(col, '')) and row.get(col, '') != '']) or "no idea") +
                 
                 # Special handling for 'sib_other_text'
-                (f", Other (please specify): {row['sib_other_text']}" if pd.notna(row['sib_other_text']) and row['sib_other_text'] != '' else "") +
+                (f", Other (please specify): {row.get('sib_other_text', '')}" if pd.notna(row.get('sib_other_text', '')) and row.get('sib_other_text', '') != '' else "") +
                 
                 ". " + '''If you were experiencing serious emotional distress, whom would you talk to about this? (Select all that apply): ''' +
-                (", ".join([f"{include_columns_talk[col]}" for col in include_columns_talk if pd.notna(row[col]) and row[col] != '']) or "no idea") +
+                (", ".join([f"{include_columns_talk[col]}" for col in include_columns_talk if pd.notna(row.get(col, '')) and row.get(col, '') != '']) or "no idea") +
                 
                 # Special handling for 'talk1_8_text'
-                (f", Other non-clinical source (please specify): {row['talk1_8_text']}" if pd.notna(row['talk1_8_text']) and row['talk1_8_text'] != '' else "") +
+                (f", Other non-clinical source (please specify): {row.get('talk1_8_text', '')}" if pd.notna(row.get('talk1_8_text', '')) and row.get('talk1_8_text', '') != '' else "") +
                 
                 ". " + '''In the past 12 months, have you received support for your mental or emotional health from any of
                 the following sources? (Select all that apply): ''' +
-                (", ".join([f"{include_columns_inf[col]}" for col in include_columns_inf if pd.notna(row[col]) and row[col] != '']) or "no idea") +
+                (", ".join([f"{include_columns_inf[col]}" for col in include_columns_inf if pd.notna(row.get(col, '')) and row.get(col, '') != '']) or "no idea") +
                 
                 # Special handling for 'inf_7_text'
-                (f", Other non-clinical source (please specify): {row['inf_7_text']}" if pd.notna(row['inf_7_text']) and row['inf_7_text'] != '' else "") +
+                (f", Other non-clinical source (please specify): {row.get('inf_7_text', '')}" if pd.notna(row.get('inf_7_text', '')) and row.get('inf_7_text', '') != '' else "") +
                 
                 ". Based on these results, is the patient depressed?"
             ), axis=1)
@@ -131,6 +133,8 @@ def main(args):
             df['idx'] = df.index + 1
 
             df['text'] = df['text'].str.replace('\n', ' ').str.replace('\r', ' ')
+
+            df['text'] = df['text'].str.replace(r'\s+', ' ', regex=True)
 
             df = df.drop_duplicates()
 
@@ -167,33 +171,33 @@ def main(args):
                 "In the past 12 months, which of the following factors have caused you to receive fewer services " +
                 "(counseling, therapy, or medications) for your mental or emotional health than you would have otherwise received? " +
                 "(Select all that apply): " + 
-                (", ".join([f"{include_columns_hs[col]}" for col in include_columns_hs if pd.notna(row[col]) and row[col] != '']) or "no idea") +
+                (", ".join([f"{include_columns_hs[col]}" for col in include_columns_hs if pd.notna(row.get(col, '')) and row.get(col, '') != '']) or "no idea") +
                 ". " + '''In the past 12 months, which of the following explain why you have not received medication or therapy 
                 for your mental or emotional health? (Select all that apply): ''' +
-                (", ".join([f"{include_columns_ns[col]}" for col in include_columns_ns if pd.notna(row[col]) and row[col] != '']) or "no idea") +
+                (", ".join([f"{include_columns_ns[col]}" for col in include_columns_ns if pd.notna(row.get(col, '')) and row.get(col, '') != '']) or "no idea") +
                 
                 # Special handling for 'bar_ns_8_text'
-                (f", Additional input provided by the user: {row['bar_ns_8_text']}" if pd.notna(row['bar_ns_8_text']) and row['bar_ns_8_text'] != '' else "") +
+                (f", Additional input provided by the user: {row.get('bar_ns_8_text', '')}" if pd.notna(row.get('bar_ns_8_text', '')) and row.get('bar_ns_8_text', '') != '' else "") +
                 
                 ". " + '''Instructions for this item: “This question asks about ways you may have hurt yourself on purpose, without
                 intending to kill yourself.” In the past year, have you ever done any of the following intentionally? (Select all that apply): ''' +
-                (", ".join([f"{include_columns_sib[col]}" for col in include_columns_sib if pd.notna(row[col]) and row[col] != '']) or "no idea") +
+                (", ".join([f"{include_columns_sib[col]}" for col in include_columns_sib if pd.notna(row.get(col, '')) and row.get(col, '') != '']) or "no idea") +
                 
                 # Special handling for 'sib_other_text'
-                (f", Other (please specify): {row['sib_other_text']}" if pd.notna(row['sib_other_text']) and row['sib_other_text'] != '' else "") +
+                (f", Other (please specify): {row.get('sib_other_text', '')}" if pd.notna(row.get('sib_other_text', '')) and row.get('sib_other_text', '') != '' else "") +
                 
                 ". " + '''If you were experiencing serious emotional distress, whom would you talk to about this? (Select all that apply): ''' +
-                (", ".join([f"{include_columns_talk[col]}" for col in include_columns_talk if pd.notna(row[col]) and row[col] != '']) or "no idea") +
+                (", ".join([f"{include_columns_talk[col]}" for col in include_columns_talk if pd.notna(row.get(col, '')) and row.get(col, '') != '']) or "no idea") +
                 
                 # Special handling for 'talk1_8_text'
-                (f", Other non-clinical source (please specify): {row['talk1_8_text']}" if pd.notna(row['talk1_8_text']) and row['talk1_8_text'] != '' else "") +
+                (f", Other non-clinical source (please specify): {row.get('talk1_8_text', '')}" if pd.notna(row.get('talk1_8_text', '')) and row.get('talk1_8_text', '') != '' else "") +
                 
                 ". " + '''In the past 12 months, have you received support for your mental or emotional health from any of
                 the following sources? (Select all that apply): ''' +
-                (", ".join([f"{include_columns_inf[col]}" for col in include_columns_inf if pd.notna(row[col]) and row[col] != '']) or "no idea") +
+                (", ".join([f"{include_columns_inf[col]}" for col in include_columns_inf if pd.notna(row.get(col, '')) and row.get(col, '') != '']) or "no idea") +
                 
                 # Special handling for 'inf_7_text'
-                (f", Other non-clinical source (please specify): {row['inf_7_text']}" if pd.notna(row['inf_7_text']) and row['inf_7_text'] != '' else "") +
+                (f", Other non-clinical source (please specify): {row.get('inf_7_text', '')}" if pd.notna(row.get('inf_7_text', '')) and row.get('inf_7_text', '') != '' else "") +
                 
                 ". Based on these results, is the patient depressed?"
             ), axis=1)
@@ -201,6 +205,7 @@ def main(args):
             df['idx'] = df.index + 1
 
             df['text'] = df['text'].str.replace('\n', ' ').str.replace('\r', ' ')
+            df['text'] = df['text'].str.replace(r'\s+', ' ', regex=True)
 
             df = df.drop_duplicates()
 
@@ -211,7 +216,98 @@ def main(args):
             final_df.to_csv(output_file_path, index=False, na_rep='NA')
 
         elif args.task == "hybrid_class_classification":
-            print("todo")
+            anxious_columns_exclude7 = ['dx_ax_1', 'dx_ax_2', 'dx_ax_3', 'dx_ax_4', 'dx_ax_5', 'dx_ax_6', 'dx_ax_6_text']
+            def classify_disorder(row):
+                is_depressed = row[depression_columns].notna().any()
+                is_anxious = row[anxious_columns_exclude7].notna().any()
+                
+                # both : 0, depression: 1, anxiety: 2, none: 3
+                if is_depressed and is_anxious:
+                    return 0
+                elif is_depressed:
+                    return 1
+                elif is_anxious:
+                    return 2
+                else:
+                    return 3
+
+            df['disorder'] = df.apply(classify_disorder, axis=1)
+
+            def classify_depression_state(row):
+                if pd.notna(row['dx_dep_1']):
+                    return 1
+                elif pd.notna(row['dx_dep_2']):
+                    return 2
+                elif pd.notna(row['dx_dep_3']):
+                    return 3
+                elif pd.notna(row['dx_dep_4']) or pd.notna(row['dx_dep_4_text']):
+                    return 4
+                elif pd.notna(row['dx_dep_5']):
+                    return 5
+                else:
+                    return 0
+
+            df['depression_state'] = df.apply(classify_depression_state, axis=1)
+
+            def classify_anxious_state(row):
+                for i in range(1, 7):
+                    if pd.notna(row[f'dx_ax_{i}']):
+                        return i
+                if pd.notna(row['dx_ax_7']):
+                    return 0
+                return 0
+
+            df['anxiety_state'] = df.apply(classify_anxious_state, axis=1)
+
+            df['text'] = df.apply(lambda row: (
+                "The Conversation between doctor and participant, discussing barriers to mental health services: " +
+                "In the past 12 months, which of the following factors have caused you to receive fewer services " +
+                "(counseling, therapy, or medications) for your mental or emotional health than you would have otherwise received? " +
+                "(Select all that apply): " + 
+                (", ".join([f"{include_columns_hs[col]}" for col in include_columns_hs if pd.notna(row.get(col, '')) and row.get(col, '') != '']) or "no idea") +
+                ". " + '''In the past 12 months, which of the following explain why you have not received medication or therapy 
+                for your mental or emotional health? (Select all that apply): ''' +
+                (", ".join([f"{include_columns_ns[col]}" for col in include_columns_ns if pd.notna(row.get(col, '')) and row.get(col, '') != '']) or "no idea") +
+                
+                # Special handling for 'bar_ns_8_text'
+                (f", Additional input provided by the user: {row.get('bar_ns_8_text', '')}" if pd.notna(row.get('bar_ns_8_text', '')) and row.get('bar_ns_8_text', '') != '' else "") +
+                
+                ". " + '''Instructions for this item: “This question asks about ways you may have hurt yourself on purpose, without
+                intending to kill yourself.” In the past year, have you ever done any of the following intentionally? (Select all that apply): ''' +
+                (", ".join([f"{include_columns_sib[col]}" for col in include_columns_sib if pd.notna(row.get(col, '')) and row.get(col, '') != '']) or "no idea") +
+                
+                # Special handling for 'sib_other_text'
+                (f", Other (please specify): {row.get('sib_other_text', '')}" if pd.notna(row.get('sib_other_text', '')) and row.get('sib_other_text', '') != '' else "") +
+                
+                ". " + '''If you were experiencing serious emotional distress, whom would you talk to about this? (Select all that apply): ''' +
+                (", ".join([f"{include_columns_talk[col]}" for col in include_columns_talk if pd.notna(row.get(col, '')) and row.get(col, '') != '']) or "no idea") +
+                
+                # Special handling for 'talk1_8_text'
+                (f", Other non-clinical source (please specify): {row.get('talk1_8_text', '')}" if pd.notna(row.get('talk1_8_text', '')) and row.get('talk1_8_text', '') != '' else "") +
+                
+                ". " + '''In the past 12 months, have you received support for your mental or emotional health from any of
+                the following sources? (Select all that apply): ''' +
+                (", ".join([f"{include_columns_inf[col]}" for col in include_columns_inf if pd.notna(row.get(col, '')) and row.get(col, '') != '']) or "no idea") +
+                
+                # Special handling for 'inf_7_text'
+                (f", Other non-clinical source (please specify): {row.get('inf_7_text', '')}" if pd.notna(row.get('inf_7_text', '')) and row.get('inf_7_text', '') != '' else "") +
+                
+                ". Based on the respondent's answers, is the participant depressed or anxious?"
+            ), axis=1)
+
+            df['idx'] = df.index + 1
+
+            df['text'] = df['text'].str.replace('\n', ' ').str.replace('\r', ' ')
+
+            df['text'] = df['text'].str.replace(r'\s+', ' ', regex=True)
+
+            df = df.drop_duplicates()
+
+            final_df = df[['idx', 'text', 'disorder', 'depression_state', 'anxiety_state']]
+
+            output_file_path = f'{args.generate_strategy}_{args.task}_depression.csv'
+
+            final_df.to_csv(output_file_path, index=False, na_rep='NA')
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -219,7 +315,7 @@ def parse_args():
     parser.add_argument("--generate_strategy", default='keep_original',
                     choices=['keep_original', 'customize'], type=str)
     parser.add_argument("--task", default='binary_class_classification',
-                    choices=['binary_class_classification','multi_class_classification'], type=str)
+                    choices=['binary_class_classification','multi_class_classification', 'hybrid_class_classification'], type=str)
     args = parser.parse_args()
     return args
 
