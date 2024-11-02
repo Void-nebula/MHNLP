@@ -76,7 +76,7 @@ class anxiety_classifier(nn.Module):
             config.classifier_dropout if config.classifier_dropout is not None else config.hidden_dropout_prob
         )
         self.dropout = nn.Dropout(classifier_dropout)
-        self.out_proj = nn.Linear(config.hidden_size, 7)
+        self.out_proj = nn.Linear(config.hidden_size, 8)
 
     def forward(self, features, **kwargs):
         x = features[:, 0, :]
@@ -100,14 +100,14 @@ class MultiTaskRobertaModel(RobertaPreTrainedModel):
         
         self.anxiety_classifier = anxiety_classifier(config)
 
-        # Initialize the loss weights as trainable parameters
-        # self.symptom_loss_weight = nn.Parameter(torch.tensor(1.0))
-        # self.depression_loss_weight = nn.Parameter(torch.tensor(1.0))
-        # self.anxiety_loss_weight = nn.Parameter(torch.tensor(1.0))
+        # Uncertainty Weight Parameters
+        self.sigma_symptom = nn.Parameter(torch.ones(1))
+        self.sigma_depression = nn.Parameter(torch.ones(1))
+        self.sigma_anxiety = nn.Parameter(torch.ones(1))
 
         self.post_init()
 
-    def forward(self, input_ids=None, attention_mask=None, labels=None, depression_labels=None, anxiety_labels=None):
+    def forward(self, input_ids=None, attention_mask=None, symptom_labels=None, depression_labels=None, anxiety_labels=None):
 
         outputs = self.roberta(input_ids=input_ids, attention_mask=attention_mask)
 
@@ -118,21 +118,20 @@ class MultiTaskRobertaModel(RobertaPreTrainedModel):
         anxiety_logits = self.anxiety_classifier(outputs.last_hidden_state)
 
         loss = None
-        if labels is not None and depression_labels is not None and anxiety_labels is not None:
+
+        if symptom_labels is not None and depression_labels is not None and anxiety_labels is not None:
             loss_fct = nn.CrossEntropyLoss()
 
-            symptom_loss = loss_fct(symptom_logits, labels)
+            symptom_loss = loss_fct(symptom_logits, symptom_labels)
             depression_loss = loss_fct(depression_logits, depression_labels)
             anxiety_loss = loss_fct(anxiety_logits, anxiety_labels)
 
-            # symptom_loss_weight = torch.clamp(self.symptom_loss_weight, min=0.1)
-            # depression_loss_weight = torch.clamp(self.depression_loss_weight, min=0.1)
-            # anxiety_loss_weight = torch.clamp(self.anxiety_loss_weight, min=0.1)
-
+            # Uncertainty Weighted Loss
             loss = (
-                symptom_loss +
-                depression_loss +
-                anxiety_loss
+            (1 / (2 * self.sigma_symptom ** 2)) * symptom_loss +
+            (1 / (2 * self.sigma_depression ** 2)) * depression_loss +
+            (1 / (2 * self.sigma_anxiety ** 2)) * anxiety_loss +
+            torch.log(self.sigma_symptom * self.sigma_depression * self.sigma_anxiety)
             )
 
         return SequenceClassifierOutput(
@@ -187,19 +186,19 @@ def train():
             }
 
     # Initialize the tokenizer
-    tokenizer = RobertaTokenizer.from_pretrained('roberta-large')
+    tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
 
     # Create datasets
-    train_dataset = MentalHealthDataset('balanced_train_data.csv', tokenizer)
-    val_dataset = MentalHealthDataset('val_data_customize_hybrid_class_classification_depression.csv', tokenizer)
-    test_dataset = MentalHealthDataset('test_data_customize_hybrid_class_classification_depression.csv', tokenizer)
+    train_dataset = MentalHealthDataset('Datasets/train_data.csv', tokenizer)
+    # val_dataset = MentalHealthDataset('val_data_customize_hybrid_class_classification_depression.csv', tokenizer)
+    test_dataset = MentalHealthDataset('Datasets/test_data.csv', tokenizer)
 
     # Define batch size
-    batch_size = 16
+    batch_size = 32
 
     # Create DataLoader for each dataset
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
+    # val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
     # Load configuration for Roberta
@@ -232,8 +231,7 @@ def train():
             optimizer.zero_grad()
 
             # forward pass
-            outputs = model(input_ids=input_ids, attention_mask=attention_mask,
-                            labels=labels, depression_labels=depression_labels, anxiety_labels=anxiety_labels)
+            outputs = model(input_ids=input_ids, attention_mask=attention_mask, symptom_labels=labels, depression_labels=depression_labels, anxiety_labels=anxiety_labels)
 
             # compute loss
             loss = outputs.loss
