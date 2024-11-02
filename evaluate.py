@@ -137,6 +137,11 @@ class MultiTaskRobertaModel(RobertaPreTrainedModel):
         
         self.anxiety_classifier = anxiety_classifier(config)
 
+        # Uncertainty Weight Parameters
+        self.sigma_symptom = nn.Parameter(torch.ones(1))
+        self.sigma_depression = nn.Parameter(torch.ones(1))
+        self.sigma_anxiety = nn.Parameter(torch.ones(1))
+
         # Initialize the loss weights as trainable parameters
         self.symptom_loss_weight = nn.Parameter(torch.tensor(1.0))
         self.depression_loss_weight = nn.Parameter(torch.tensor(1.0))
@@ -166,10 +171,12 @@ class MultiTaskRobertaModel(RobertaPreTrainedModel):
             depression_loss_weight = torch.clamp(self.depression_loss_weight, min=0.1)
             anxiety_loss_weight = torch.clamp(self.anxiety_loss_weight, min=0.1)
 
+            # Uncertainty Weighted Loss
             loss = (
-                symptom_loss_weight * symptom_loss +
-                depression_loss_weight * depression_loss +
-                anxiety_loss_weight * anxiety_loss
+            (1 / (2 * self.sigma_symptom ** 2)) * symptom_loss +
+            (1 / (2 * self.sigma_depression ** 2)) * depression_loss +
+            (1 / (2 * self.sigma_anxiety ** 2)) * anxiety_loss +
+            torch.log(self.sigma_symptom * self.sigma_depression * self.sigma_anxiety)
             )
 
         return SequenceClassifierOutput(
