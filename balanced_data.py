@@ -2,7 +2,7 @@ import pandas as pd
 from sklearn.utils import resample
 
 # 读取 CSV 文件
-df = pd.read_csv('total_train_data.csv')
+df = pd.read_csv('2016-2017.csv')
 
 # 设置目标总样本数
 target_total_size = 10000

@@ -189,9 +189,9 @@ def train():
     tokenizer = RobertaTokenizer.from_pretrained('roberta-base')
 
     # Create datasets
-    train_dataset = MentalHealthDataset('Datasets/train_data.csv', tokenizer)
+    train_dataset = MentalHealthDataset('train.csv', tokenizer)
     # val_dataset = MentalHealthDataset('val_data_customize_hybrid_class_classification_depression.csv', tokenizer)
-    test_dataset = MentalHealthDataset('Datasets/test_data.csv', tokenizer)
+    test_dataset = MentalHealthDataset('balanced_test_data.csv', tokenizer)
 
     # Define batch size
     batch_size = 32
@@ -215,7 +215,7 @@ def train():
     model.to(device)
 
     # Training loop
-    num_epochs = 3
+    num_epochs = 10
 
     for epoch in range(num_epochs):
         model.train()

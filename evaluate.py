@@ -113,7 +113,7 @@ class anxiety_classifier(nn.Module):
             config.classifier_dropout if config.classifier_dropout is not None else config.hidden_dropout_prob
         )
         self.dropout = nn.Dropout(classifier_dropout)
-        self.out_proj = nn.Linear(config.hidden_size, 7)  # 这里假设 symptom 任务有 4 个类别
+        self.out_proj = nn.Linear(config.hidden_size, 8)  # 这里假设 symptom 任务有 4 个类别
 
     def forward(self, features, **kwargs):
         x = features[:, 0, :]
@@ -248,7 +248,7 @@ device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 model.to(device)
 
 # 初始化模型和测试数据集的 DataLoader
-test_dataset = MentalHealthDataset('test_data_customize_hybrid_class_classification_depression.csv', tokenizer)
+test_dataset = MentalHealthDataset('test.csv', tokenizer)
 test_loader = DataLoader(test_dataset, batch_size=16, shuffle=False)
 
 # 评估模型

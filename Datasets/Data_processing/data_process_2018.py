@@ -13,80 +13,6 @@ def main():
 
     anxiety_columns = ['dx_ax_1', 'dx_ax_2', 'dx_ax_3', 'dx_ax_4', 'dx_ax_5', 'dx_ax_6_new', 'dx_ax_6_text_new', 'dx_ax_7_new',]
 
-    include_columns_hs = {
-        'bar_hs_1': "No need for services",
-        'bar_hs_2': "Financial reasons (too expensive, not covered by insurance)",
-        'bar_hs_3': "Not enough time",
-        'bar_hs_4': "Not sure where to go",
-        'bar_hs_5': "Difficulty finding an available appointment",
-        'bar_hs_6': "Prefer to deal with issues on my own or with support from family/friends",
-        'bar_hs_7': "Privacy concerns",
-        'bar_hs_8': "People providing services don’t understand me",
-        'bar_hs_9': "Other (please specify)",
-        'bar_hs_9_text': "Additional input provided by the user",
-        'bar_hs_10': "No barriers [mutually exclusive]",
-        'bar_hs_11': "Fear of being mistreated due to my identity/identities",
-    }
-
-    include_columns_ns = {
-        'bar_ns_1': "I haven’t had the chance to go but I plan to",
-        'bar_ns_2': "No need for services",
-        'bar_ns_3': "Financial reasons (too expensive, not covered by insurance)",
-        'bar_ns_4': "Not enough time",
-        'bar_ns_5': "Not sure where to go",
-        'bar_ns_6': "Difficulty finding an available appointment",
-        'bar_ns_7': "Prefer to deal with issues on my own or with support from family/friends",
-        'bar_ns_8': "Other (please specify)",
-        'bar_ns_8_text': "Additional input provided by the user",
-        'bar_ns_9': "No barriers [mutually exclusive]",
-        'bar_ns_10': "Privacy concerns",
-        'bar_ns_11': "People providing services don’t understand me",
-        'bar_ns_12': "Fear of being mistreated due to my identity/identities"
-    }
-
-    include_columns_sib = {
-        'sib_cut': "Cut myself",
-        'sib_burn': "Burned myself",
-        'sib_punch': "Punched or banged myself",
-        'sib_scratch': "Scratched myself",
-        'sib_pull': "Pulled my hair",
-        'sib_bit': "Bit myself",
-        'sib_wound': "Interfered with wound healing",
-        'sib_carv': "Carved words or symbols into skin",
-        'sib_rub': "Rubbed sharp objects into skin",
-        'sib_pobj': "Punched or banged an object to hurt myself",
-        'sib_other': "Other (please specify)",
-        'sib_other_text': "Additional input provided by the user",
-        'sib_none': "I'm not hurt myself."
-    }
-
-    include_columns_talk = {
-        'talk1_1': "Professional clinician (e.g., psychologist, counselor, or psychiatrist)",
-        'talk1_2': "Roommate",
-        'talk1_3': "Friend (who is not a roommate)",
-        'talk1_4': "Significant other/romantic partner",
-        'talk1_5': "Family member",
-        'talk1_6': "Religious counselor or other religious contact",
-        'talk1_7': "Support group",
-        'talk1_8': "Other non-clinical source (please specify)",
-        'talk1_8_text': "Additional input provided by the user",
-        'talk1_9': "I don't talk to anybody."
-    }
-
-    include_columns_inf = {
-        'inf_1': "Roommate",
-        'inf_2': "Friend (who is not a roommate)",
-        'inf_3': "Significant other",
-        'inf_4': "Family member",
-        'inf_5': "Religious counselor or other religious contact",
-        'inf_6': "Support group",
-        'inf_7': "Other non-clinical source (please specify)",
-        'inf_7_text': "Additional input provided by the user",
-        'inf_8': "No one",
-        'inf_9': "Faculty member/professor",
-        'inf_10': "Staff member"
-    }
-
     def classify_disorder(row):
         is_depressed = row[depression_columns].notna().any()
         is_anxious = row[anxiety_columns].notna().any()
@@ -142,40 +68,66 @@ def main():
 
     df['anxiety_state'] = df.apply(classify_anxious_state, axis=1)
 
+    # Concatenate the prompts
     df['text'] = df.apply(lambda row: (
-        "The Conversation between doctor and participant, discussing barriers to mental health services: " +
-        "In the past 12 months, which of the following factors have caused you to receive fewer services " +
-        "(counseling, therapy, or medications) for your mental or emotional health than you would have otherwise received? " +
-        "(Select all that apply): " + 
-        (", ".join([f"{include_columns_hs[col]}" for col in include_columns_hs if pd.notna(row.get(col, '')) and row.get(col, '') != '']) or "no idea") +
-        ". " + '''In the past 12 months, which of the following explain why you have not received medication or therapy 
-        for your mental or emotional health? (Select all that apply): ''' +
-        (", ".join([f"{include_columns_ns[col]}" for col in include_columns_ns if pd.notna(row.get(col, '')) and row.get(col, '') != '']) or "no idea") +
-        
-        # Special handling for 'bar_ns_8_text'
-        (f", Additional input provided by the user: {row.get('bar_ns_8_text', '')}" if pd.notna(row.get('bar_ns_8_text', '')) and row.get('bar_ns_8_text', '') != '' else "") +
-        
-        ". " + '''Instructions for this item: “This question asks about ways you may have hurt yourself on purpose, without
-        intending to kill yourself.” In the past year, have you ever done any of the following intentionally? (Select all that apply): ''' +
-        (", ".join([f"{include_columns_sib[col]}" for col in include_columns_sib if pd.notna(row.get(col, '')) and row.get(col, '') != '']) or "no idea") +
-        
-        # Special handling for 'sib_other_text'
-        (f", Other (please specify): {row.get('sib_other_text', '')}" if pd.notna(row.get('sib_other_text', '')) and row.get('sib_other_text', '') != '' else "") +
-        
-        ". " + '''If you were experiencing serious emotional distress, whom would you talk to about this? (Select all that apply): ''' +
-        (", ".join([f"{include_columns_talk[col]}" for col in include_columns_talk if pd.notna(row.get(col, '')) and row.get(col, '') != '']) or "no idea") +
-        
-        # Special handling for 'talk1_8_text'
-        (f", Other non-clinical source (please specify): {row.get('talk1_8_text', '')}" if pd.notna(row.get('talk1_8_text', '')) and row.get('talk1_8_text', '') != '' else "") +
-        
-        ". " + '''In the past 12 months, have you received support for your mental or emotional health from any of
-        the following sources? (Select all that apply): ''' +
-        (", ".join([f"{include_columns_inf[col]}" for col in include_columns_inf if pd.notna(row.get(col, '')) and row.get(col, '') != '']) or "no idea") +
-        
-        # Special handling for 'inf_7_text'
-        (f", Other non-clinical source (please specify): {row.get('inf_7_text', '')}" if pd.notna(row.get('inf_7_text', '')) and row.get('inf_7_text', '') != '' else "") +
-        
-        ". Based on the respondent's answers, is the participant depressed or anxious?"
+        '''You are a mental health counselor, currently in a conversation with a college student. 
+        This student reported the following informations, symptoms and conditions in a recent mental health survey. ''' +
+        # Age
+        "Age: " + (f"{round(row['age'])}" if (pd.notna(row['age']) and row.get('age') != '') else "Unknown") + '. ' +
+
+        # Gender
+        "Gender: " + (f"{row['sex_birth']}" if (pd.notna(row['sex_birth']) and row.get('sex_birth') != '') else "Unknown") + '. ' +
+
+        # Race
+        "Race: " + (", ".join([f"{race[col]}" for col in race if pd.notna(row.get(col, '')) and row.get(col, '') != '']) or "Unknown") + '. ' +
+
+        # Financial situation
+        "Financial situation: " + 
+        (f"{frequence_maps[row['fincur']] + " stressful"}" if (pd.notna(row['fincur']) and row.get('fincur') != '') else "Unknown") + '. ' +
+
+        # Sense of belonging
+        (f"{"I " + agree_maps[row['belong1']]}" if (pd.notna(row['belong1']) and row.get('belong1') != '') else "I dont't know how I agree") + 
+        " with that I see myself as a part of the campus community. " +
+
+        # time spent on class
+        "I usually spend " + 
+        (f"{time_maps[row['timeclass']]}" if (pd.notna(row['timeclass']) and row.get('timeclass') != '') else "unknown hours") + " attending class/lab. " +
+
+        # time spent on studying
+        "I usually spend " + 
+        (f"{time_maps[row['timestud']]}" if (pd.notna(row['timestud']) and row.get('timestud') != '') else "unknown hours") + " studying/doing homework. " +
+
+        # Confidence in academic performance
+        (f"{"I " + agree_maps[row['persist']]}" if (pd.notna(row['persist']) and row.get('persist') != '') else "am not sure") +
+        " that I am confident I will be able to finish my degree no matter what challenges I may face. " + 
+
+        # Satisfaction with social life
+        "I " + 
+        (f"{satisfied_maps[row['satisfied_overall']]}" if (pd.notna(row['satisfied_overall']) and row.get('satisfied_overall') != '') else "don't know if I safisfied") + 
+        " with my overall social and extracurricular experiences at my school . " +
+
+        # Disabling condition
+        (f"{"I have a disabling condition" if (pd.notna(row['disab_2']) and row.get('disab_2') == 'Yes') else "I don't have a disabling condition"}") + ". " +
+
+        # Impact of depression
+        (f"{"It's " + row['dep_impa'].lower()}" if (pd.notna(row['dep_impa']) and 
+                                            (row.get('dep_impa') == 'Not difficult at all' or
+                                             row.get('dep_impa') == 'Somewhat difficult' or
+                                             row.get('dep_impa') == 'Very difficult' or
+                                             row.get('dep_impa') == 'Extremely difficult'
+                                             )) else "I don't know how difficult") +
+        " that PHQ9 questions (depression) made it for me to do my work, take care of things at home, or get along with other people. " +
+
+        # Impact of anxiety
+        (f"{"It's " + row['gad7_impa'].lower()}" if (pd.notna(row['gad7_impa']) and 
+                                            (row.get('gad7_impa') == 'Not difficult at all' or
+                                             row.get('gad7_impa') == 'Somewhat difficult' or
+                                             row.get('gad7_impa') == 'Very difficult' or
+                                             row.get('gad7_impa') == 'Extremely difficult'
+                                             )) else "I don't know how difficult") +
+        " that GAD7 questions (anxiety) made it for me to do my work, take care of things at home, or get along with other people. " +
+
+        "Based on the candidate's answers, is this candidate having any disorders whether of depression or anxiety?"
     ), axis=1)
 
     df['idx'] = df.index + 1
